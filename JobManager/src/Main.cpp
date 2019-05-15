@@ -20,7 +20,7 @@ struct TestData
 
 static void Printvalues( const TestData* aData )
 {
-	if ( aData == nullptr )
+	if( aData == nullptr )
 	{
 		return;
 	}
@@ -34,12 +34,12 @@ static void Printvalues( const TestData* aData )
 void empty_job( Job* aJob, const void* aData )
 {
 	const TestData* myArgs = static_cast<const TestData*>( aData );
-	if ( myArgs )
+	if( myArgs )
 	{
 		Printvalues( myArgs );
 	}
 	int sum = 0;
-	for ( int i = 0; i < 10000; ++i )
+	for( int i = 0; i < 10000; ++i )
 	{
 		sum += 1 * i;
 	}
@@ -59,7 +59,7 @@ static void TestPerfSimple()
 	end = std::chrono::steady_clock::now();
 	begin = std::chrono::steady_clock::now();
 
-	for ( unsigned int j = 0; j < N; ++j )
+	for( unsigned int j = 0; j < N; ++j )
 	{
 		empty_job( nullptr, nullptr );
 	}
@@ -84,9 +84,9 @@ static void TestPerfSimple()
 	hey.doYou = 1;
 	hey.work2 = 69;
 
-	Job* root = JobManager::Instance.CreateJob( &empty_job, &hey, sizeof( hey ) );
+	Job * root = JobManager::Instance.CreateJob( &empty_job, &hey, sizeof( hey ) );
 
-	for ( unsigned int i = 0; i < N; ++i )
+	for( unsigned int i = 0; i < N; ++i )
 	{
 		Job* child = JobManager::Instance.CreateJobAsChild( root, &empty_job, &hey, sizeof( hey ) );
 		JobManager::Instance.Run( child );
@@ -104,15 +104,15 @@ static void TestPerfSimple()
 
 }
 
-static void args_using_job( Job* aJob, const void* aData )
+static void args_using_job( Job * aJob, const void* aData )
 {
-	const uintptr_t myvalue = reinterpret_cast<const uintptr_t>( aData );
+	TestData* ptr = nullptr;
+	memcpy( &ptr, aData, sizeof( TestData * * ) );
 
-	// I wanna get a TestDataBoi pointer out of the aData
-	const TestData* myArgs = static_cast<const TestData*>( aData );
-
-	Printvalues( myArgs );
-
+	if( ptr != nullptr )
+	{
+		Printvalues( ptr );
+	}
 }
 
 void TestHeapArgs()
@@ -120,26 +120,24 @@ void TestHeapArgs()
 	std::vector<TestData*> HeapData;
 
 	// Create some test data on the heap
-	for ( int i = 0; i < BUF_SIZE; ++i )
+	for( int i = 0; i < BUF_SIZE; ++i )
 	{
 		TestData* ptr = new TestData();
 		ptr->doYou = 1 * ( i + 1 );
 		ptr->goodbye = 2 * ( i + 1 );
 		ptr->hello = 3 * ( i + 1 );
 		ptr->iWonder = 4 * ( i + 1 );
-		ptr->work2 = (uint64_t)( 5 * ( i + 1 ) );
+		ptr->work2 = 67;
 		HeapData.emplace_back( ptr );
 	}
 
-	uintptr_t intDataType = reinterpret_cast<uintptr_t>( HeapData[ 0 ] );
+	TestData * *p = &HeapData[ 0 ];
 
-	Job* root = JobManager::Instance.CreateJob( &args_using_job, (void*)intDataType, sizeof( uintptr_t ) );
+	Job * root = JobManager::Instance.CreateJob( &args_using_job, &HeapData[ 0 ], sizeof( TestData * * ) );
 
-	for ( unsigned int i = 1; i < BUF_SIZE; ++i )
+	for( unsigned int i = 1; i < BUF_SIZE; ++i )
 	{
-		uintptr_t intdata = reinterpret_cast<uintptr_t>( HeapData[ i ] );
-
-		Job* child = JobManager::Instance.CreateJobAsChild( root, &args_using_job, (void*)intdata, sizeof( TestData* ) );
+		Job* child = JobManager::Instance.CreateJobAsChild( root, &args_using_job, &HeapData[ i ], sizeof( TestData * * ) );
 		JobManager::Instance.Run( child );
 	}
 
@@ -147,9 +145,9 @@ void TestHeapArgs()
 	JobManager::Instance.Wait( root );
 
 
-	for ( int i = 0; i < BUF_SIZE; ++i )
+	for( int i = 0; i < BUF_SIZE; ++i )
 	{
-		if ( HeapData[ i ] != nullptr )
+		if( HeapData[ i ] != nullptr )
 		{
 			delete HeapData[ i ];
 		}
@@ -167,8 +165,8 @@ int main()
 	// Create a job manager
 	JobManager::Instance.Startup();
 
-	TestPerfSimple();
-	//TestHeapArgs();
+	//TestPerfSimple();
+	TestHeapArgs();
 
 	// Shutdown job manager
 	JobManager::Instance.Shutdown();

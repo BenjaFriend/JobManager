@@ -15,42 +15,42 @@ void JobManager::Startup()
 	// Create a thread pool to the worker thread
 	const unsigned int threadCount = GetAmountOfSupportedThreads();
 
-	for ( size_t i = 0; i < threadCount; ++i )
+	for( size_t i = 0; i < threadCount; ++i )
 	{
 		WorkerThreads.push_back( std::thread( &JobManager::WorkerThread, this ) );
 	}
-
 }
 
 void JobManager::Shutdown()
 {
 	IsDone = true;
 
-	for ( auto &item : WorkerThreads )
+	for( auto& item : WorkerThreads )
 	{
 		item.join();
 	}
 }
 
-Job * JobManager::CreateJob( JobFunction aFunction, void* args, size_t aSize )
+Job* JobManager::CreateJob( JobFunction aFunction, void* args, size_t aSize )
 {
 	assert( aSize >= 0 && aSize < JOB_DATA_PADDING_SIZE );
 
-	Job* job = AllocateJob();
+	Job * job = AllocateJob();
 	job->Function = aFunction;
 	job->Parent = nullptr;
-	job->UnfinishedJobs.store( 1 );
 
 	// Memcpy the args to the jobs padding
-	if ( args != nullptr )
+	if( args != nullptr )
 	{
 		memcpy( job->Padding, args, aSize );
 	}
 
+	job->UnfinishedJobs.store( 1 );
+
 	return job;
 }
 
-Job * JobManager::CreateJobAsChild( Job * aParent, JobFunction aFunction, void* args, size_t aSize )
+Job* JobManager::CreateJobAsChild( Job* aParent, JobFunction aFunction, void* args, size_t aSize )
 {
 	assert( aSize >= 0 && aSize < JOB_DATA_PADDING_SIZE );
 
@@ -58,21 +58,22 @@ Job * JobManager::CreateJobAsChild( Job * aParent, JobFunction aFunction, void* 
 	aParent->UnfinishedJobs.fetch_add( 1 );
 
 	// Create a new job
-	Job* job = AllocateJob();
+	Job * job = AllocateJob();
 	job->Function = aFunction;
 	job->Parent = aParent;
-	job->UnfinishedJobs.store( 1 );
 
 	// Memcpy the args to the jobs padding
-	if ( args != nullptr )
+	if( args != nullptr )
 	{
 		memcpy( job->Padding, args, aSize );
 	}
 
+	job->UnfinishedJobs.store( 1 );
+
 	return job;
 }
 
-void JobManager::Run( Job * aJob )
+void JobManager::Run( Job* aJob )
 {
 	assert( aJob != nullptr );
 	locklessReadyQueue.enqueue( aJob );
@@ -82,10 +83,10 @@ void JobManager::Wait( const Job * aJob )
 {
 	// Wait until this job has completed
 	// in the meantime, work on another job
-	while ( !HasJobCompleted( aJob ) )
+	while( !HasJobCompleted( aJob ) )
 	{
 		Job* nextJob = GetJob();
-		if ( nextJob )
+		if( nextJob )
 		{
 			Execute( nextJob );
 		}
@@ -99,10 +100,10 @@ const unsigned int JobManager::GetAmountOfSupportedThreads()
 
 void JobManager::WorkerThread()
 {
-	while ( !IsDone )
+	while( !IsDone )
 	{
 		Job* job = GetJob();
-		if ( job )
+		if( job )
 		{
 			Execute( job );
 		}
@@ -115,11 +116,11 @@ void JobManager::YieldWorker()
 	std::this_thread::sleep_for( std::chrono::milliseconds( 3 ) );
 }
 
-Job * JobManager::GetJob()
+Job* JobManager::GetJob()
 {
 	Job* CurJob = nullptr;
 	bool found = locklessReadyQueue.try_dequeue( CurJob );
-	if ( found )
+	if( found )
 	{
 		return CurJob;
 	}
@@ -150,7 +151,7 @@ void JobManager::Execute( Job * aJob )
 	Finish( aJob );
 }
 
-Job * JobManager::AllocateJob()
+Job* JobManager::AllocateJob()
 {
 	const uint32_t index = g_allocatedJobs++;
 	return &g_jobAllocator[ index & ( MAX_JOB_COUNT - 1u ) ];
@@ -163,7 +164,7 @@ void JobManager::Finish( Job * aJob )
 	const int32_t unfinishedJobs = --aJob->UnfinishedJobs;
 
 	// If this job is done, then let the jobs parent know
-	if ( ( unfinishedJobs == 0 ) && ( aJob->Parent ) )
+	if( ( unfinishedJobs == 0 ) && ( aJob->Parent ) )
 	{
 		Finish( aJob->Parent );
 	}
