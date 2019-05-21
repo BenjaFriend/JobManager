@@ -18,7 +18,6 @@ Job* StealingQueue::Pop()
 	long b = m_Bottom - 1;
 	m_Bottom = b;
 
-	MEMORY_BARRIER;
 	_InterlockedExchange( &m_Bottom, b );
 
 	long t = m_Top;
