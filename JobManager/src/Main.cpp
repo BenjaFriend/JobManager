@@ -36,7 +36,7 @@ void empty_job( Job* aJob, const void* aData )
 	const TestData* myArgs = static_cast<const TestData*>( aData );
 	if( myArgs )
 	{
-		Printvalues( myArgs );
+		//Printvalues( myArgs );
 	}
 	int sum = 0;
 	for( int i = 0; i < 10000; ++i )
@@ -101,7 +101,7 @@ static void TestPerfSimple()
 	std::cout << "Time to run (micro) = " << withJobSystemTime << std::endl;
 
 	std::cout << "Difference (SingleThread - WithJobs) = " << ( singleThreadTime - withJobSystemTime ) << std::endl;
-
+	
 }
 
 static void args_using_job( Job * aJob, const void* aData )
@@ -162,15 +162,15 @@ int main()
 	_CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
 #endif
 
+	// Init helpers for random
+	Utils::Random::Init();
+
 	// Create a job manager
 	JobManager::Instance.Startup();
-
-	//TestPerfSimple();
-	TestHeapArgs();
-
+	std::cout << "helo wat" << std::endl;
+	TestPerfSimple();
+	//TestHeapArgs();
+	
 	// Shutdown job manager
 	JobManager::Instance.Shutdown();
-
-
-
 }

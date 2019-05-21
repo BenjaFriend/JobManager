@@ -5,8 +5,8 @@ thread_local Job JobManager::g_jobAllocator[ MAX_JOB_COUNT ];
 thread_local uint32_t JobManager::g_allocatedJobs = 0u;
 
 JobManager JobManager::Instance = {};
-moodycamel::ConcurrentQueue<Job*> JobManager::locklessReadyQueue;
-std::vector<std::thread> JobManager::WorkerThreads;
+std::vector<std::thread> JobManager::g_WorkerThreads;
+std::unordered_map<std::thread::id, StealingQueue> JobManager::g_JobQueues;
 
 void JobManager::Startup()
 {
@@ -17,7 +17,9 @@ void JobManager::Startup()
 
 	for( size_t i = 0; i < threadCount; ++i )
 	{
-		WorkerThreads.push_back( std::thread( &JobManager::WorkerThread, this ) );
+		g_WorkerThreads.push_back( std::thread( &JobManager::WorkerThread, this ) );
+		std::thread::id id = g_WorkerThreads[ i ].get_id();
+		g_JobQueues[ id ] = StealingQueue();
 	}
 }
 
@@ -25,7 +27,7 @@ void JobManager::Shutdown()
 {
 	IsDone = true;
 
-	for( auto& item : WorkerThreads )
+	for( auto& item : g_WorkerThreads )
 	{
 		item.join();
 	}
@@ -38,6 +40,7 @@ Job* JobManager::CreateJob( JobFunction aFunction, void* args, size_t aSize )
 	Job * job = AllocateJob();
 	job->Function = aFunction;
 	job->Parent = nullptr;
+	memset( job->Padding, '\0', JOB_DATA_PADDING_SIZE );
 
 	// Memcpy the args to the jobs padding
 	if( args != nullptr )
@@ -61,6 +64,7 @@ Job* JobManager::CreateJobAsChild( Job* aParent, JobFunction aFunction, void* ar
 	Job * job = AllocateJob();
 	job->Function = aFunction;
 	job->Parent = aParent;
+	memset( job->Padding, '\0', JOB_DATA_PADDING_SIZE );
 
 	// Memcpy the args to the jobs padding
 	if( args != nullptr )
@@ -75,11 +79,11 @@ Job* JobManager::CreateJobAsChild( Job* aParent, JobFunction aFunction, void* ar
 
 void JobManager::Run( Job* aJob )
 {
-	assert( aJob != nullptr );
-	locklessReadyQueue.enqueue( aJob );
+	std::thread::id id = ::std::this_thread::get_id();
+	g_JobQueues[ id ].Push( aJob );
 }
 
-void JobManager::Wait( const Job * aJob )
+void JobManager::Wait( const Job* aJob )
 {
 	// Wait until this job has completed
 	// in the meantime, work on another job
@@ -118,15 +122,35 @@ void JobManager::YieldWorker()
 
 Job* JobManager::GetJob()
 {
-	Job* CurJob = nullptr;
-	bool found = locklessReadyQueue.try_dequeue( CurJob );
-	if( found )
+	std::thread::id id = ::std::this_thread::get_id();
+	StealingQueue * q = &g_JobQueues[ id ];
+
+	Job* CurJob = q->Pop();
+
+	if( CurJob )
 	{
 		return CurJob;
 	}
 	else
 	{
-		// TODO: Try and steal a job
+		auto randQueue = g_JobQueues.begin();
+		// #TODO: Make this get a random queue
+		std::advance( randQueue, Utils::Random::Random0ToN( g_JobQueues.size() ) );
+
+		StealingQueue* stealQueue = &randQueue->second;
+		// Make sure that we don't steal from ourselves
+		if( stealQueue == q )
+		{
+			YieldWorker();
+			return nullptr;
+		}
+		
+		// try and steal a job from another job queue
+		Job* stolenJob = stealQueue->Steal();
+		if( stolenJob )
+		{
+			return stolenJob;
+		}
 
 		// We couldn't find out job, 
 		YieldWorker();
@@ -136,7 +160,7 @@ Job* JobManager::GetJob()
 	return nullptr;
 }
 
-bool JobManager::HasJobCompleted( const Job * aJob )
+bool JobManager::HasJobCompleted( const Job* aJob )
 {
 	// A job is done if there is no more unfinished work
 	return ( aJob->UnfinishedJobs <= 0 );
@@ -155,7 +179,6 @@ Job* JobManager::AllocateJob()
 {
 	const uint32_t index = g_allocatedJobs++;
 	return &g_jobAllocator[ index & ( MAX_JOB_COUNT - 1u ) ];
-	//return &g_jobAllocator[ ( index - 1u ) & ( MAX_JOB_COUNT - 1u ) ];
 }
 
 void JobManager::Finish( Job * aJob )

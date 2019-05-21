@@ -1,6 +1,23 @@
 #ifndef PCH_H
 #define PCH_H
 
+#include "Utils.h"
+
+#if defined ( _MSC_VER )
+
+#define COMPILER_BARRIER	_ReadWriteBarrier();
+
+#elif defined( __GNUC__ )
+
+#define COMPILER_BARRIER	asm volatile ("" ::: "memory");
+
+#else
+
+#define COMPILER_BARRIER	asm volatile("" ::: "memory");
+
+#endif
+
+
 // Debug macros ------------------
 #ifdef _DEBUG
 
@@ -8,7 +25,7 @@
 
 #else
 
-#define DEBUG_PRINT(a, ...)
+#define DEBUG_PRINT( a, ... )
 
 #endif
 

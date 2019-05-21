@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Git\JobManager\JobManager\src\JobManager.cpp">
+      <Filter>JobManager\src</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Git\JobManager\JobManager\src\Main.cpp">
+      <Filter>JobManager\src</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Git\JobManager\JobManager\src\StealingQueue.cpp">
+      <Filter>JobManager\src</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Git\JobManager\JobManager\src\pch.cpp">
+      <Filter>JobManager\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Git\JobManager\JobManager\inc\Job.h">
+      <Filter>JobManager\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Git\JobManager\JobManager\inc\JobManager.h">
+      <Filter>JobManager\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Git\JobManager\JobManager\inc\StealingQueue.h">
+      <Filter>JobManager\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Git\JobManager\JobManager\inc\blockingconcurrentqueue.h">
+      <Filter>JobManager\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Git\JobManager\JobManager\inc\concurrentqueue.h">
+      <Filter>JobManager\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Git\JobManager\JobManager\inc\pch.h">
+      <Filter>JobManager\inc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="JobManager">
+      <UniqueIdentifier>{D53CD7BE-CC5E-32F9-B261-D89CCACDF708}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="JobManager\inc">
+      <UniqueIdentifier>{D06CE599-9EE9-32EC-BAA6-A05FFA606682}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="JobManager\src">
+      <UniqueIdentifier>{9BE59DB1-61B8-3DD3-9118-D165CE6ADE26}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

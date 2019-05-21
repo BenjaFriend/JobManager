@@ -3,9 +3,10 @@
 #include <vector>
 #include <atomic>
 #include <assert.h>
-
+#include <unordered_map>
 #include "Job.h"
 #include "concurrentqueue.h"    // lock-less queue
+#include "StealingQueue.h"
 
 /// <summary>
 /// Job 
@@ -120,10 +121,9 @@ private:
 	std::atomic<bool> IsDone{ false };
 
 	/** A vector of all worker threads in the pool */
-	static std::vector<std::thread> WorkerThreads;
-
-	/** Lockless queue for keeping track of what jobs are ready to be done */
-	static moodycamel::ConcurrentQueue<Job*> locklessReadyQueue;
+	static std::vector<std::thread> g_WorkerThreads;
+	/** Map of thread ID's to their queues */
+	static std::unordered_map<std::thread::id, StealingQueue> g_JobQueues;
 
 	/** Job many possible jobs we can have in a pool */
 	const static thread_local unsigned int MAX_JOB_COUNT = 4096;
@@ -131,5 +131,4 @@ private:
 	static thread_local Job g_jobAllocator[ MAX_JOB_COUNT ];
 	/** Thread-local variable used to keep track of which job we are on */
 	static thread_local uint32_t g_allocatedJobs;
-
 };
