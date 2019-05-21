@@ -41,7 +41,7 @@ private:
 	static const unsigned int MASK = NUM_JOBS - 1u;
 
 	/** Memory block of possible jobs */
-	Job* m_Jobs[ NUM_JOBS ];
+	Job* m_Jobs[ NUM_JOBS ] = {};
 
 	/** Marker for where the top of the queue is */
 	volatile long m_Top = 0u;

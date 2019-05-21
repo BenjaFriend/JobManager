@@ -36,8 +36,9 @@ void empty_job( Job* aJob, const void* aData )
 	const TestData* myArgs = static_cast<const TestData*>( aData );
 	if( myArgs )
 	{
-		//Printvalues( myArgs );
+		Printvalues( myArgs );
 	}
+	COMPILER_BARRIER;
 	int sum = 0;
 	for( int i = 0; i < 10000; ++i )
 	{
@@ -45,7 +46,7 @@ void empty_job( Job* aJob, const void* aData )
 	}
 }
 
-static void TestPerfSimple()
+static long long TestPerfSimple()
 {
 	std::cout << "==== TestPerfSimple ==== " << std::endl;
 
@@ -101,7 +102,7 @@ static void TestPerfSimple()
 	std::cout << "Time to run (micro) = " << withJobSystemTime << std::endl;
 
 	std::cout << "Difference (SingleThread - WithJobs) = " << ( singleThreadTime - withJobSystemTime ) << std::endl;
-	
+	return ( singleThreadTime - withJobSystemTime );
 }
 
 static void args_using_job( Job * aJob, const void* aData )
@@ -167,10 +168,11 @@ int main()
 
 	// Create a job manager
 	JobManager::Instance.Startup();
-	std::cout << "helo wat" << std::endl;
-	TestPerfSimple();
+	for( int i = 0; i < 100; ++i )
+		TestPerfSimple();	
+
 	//TestHeapArgs();
-	
+
 	// Shutdown job manager
 	JobManager::Instance.Shutdown();
 }

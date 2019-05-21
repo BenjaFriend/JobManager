@@ -122,7 +122,7 @@ void JobManager::YieldWorker()
 
 Job* JobManager::GetJob()
 {
-	std::thread::id id = ::std::this_thread::get_id();
+	std::thread::id id = std::this_thread::get_id();
 	StealingQueue * q = &g_JobQueues[ id ];
 
 	Job* CurJob = q->Pop();
@@ -134,8 +134,7 @@ Job* JobManager::GetJob()
 	else
 	{
 		auto randQueue = g_JobQueues.begin();
-		// #TODO: Make this get a random queue
-		std::advance( randQueue, Utils::Random::Random0ToN( g_JobQueues.size() ) );
+		std::advance( randQueue, Utils::Random::Random0ToN( g_JobQueues.size() - 1 ) );
 
 		StealingQueue* stealQueue = &randQueue->second;
 		// Make sure that we don't steal from ourselves
